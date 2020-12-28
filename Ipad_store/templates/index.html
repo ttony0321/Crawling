@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>쇼핑몰</title>
+</head>
+<!-- Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous">
+
+<!-- JS -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+<!--구글폰트-->
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Yeon+Sung&display=swap" rel="stylesheet">
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#order-box').html("");
+        showExchange()
+        showOrders()
+    })
+
+    function order() {
+        let name = $('#order-name').val();
+        let count = $('#order-count').val();
+        let address = $('#order-address').val();
+        let phone = $('#order-phone').val();
+
+        if (name == '') {
+            alert('이름을 입력해주세요')
+            $('#order-name').focus()
+            return
+        } else if (count == '') {
+            alert('수량을 입력해주세요')
+            $('#order-count').focus()
+            return
+        } else if (address == '') {
+            alert('주소를 입력해주세요')
+            $('#order-address').focus()
+            return
+        } else if (phone == '') {
+            alert('휴대폰번호를 입력해주세요')
+            $('#order-phone').focus()
+            return
+        } else if (!isCellPhone(phone)) {
+            alert('휴대폰번호 입력 형식이 틀립니다. \n 010-0000-0000으로 입력해주세요')
+            return
+        }
+
+        $.ajax({
+            type: "POST",
+            url: "/order",
+            data: {name_give: name, count_give: count, address_give: address, phone_give: phone},
+            success: function (response) {
+                if (response['result'] == 'success') {
+                    alert('주문 완료!');
+                    window.location.reload();
+                }
+            }
+        })
+    }
+
+    function showOrders() {
+        $.ajax({
+            type: "GET",
+            url: "/order",
+            data: {},
+            success: function (response) {
+                if (response['result'] == 'success') {
+                    let orders = response['orders'];
+                    for (let i = 0; i < orders.length; i++) {
+                        makeOrderRow(orders[i]['name'], orders[i]['count'], orders[i]['address'], orders[i]['phone'])
+                    }
+                } else {
+                    alert('주문을 받아오지 못했습니다');
+                }
+            }
+        })
+    }
+
+    function makeOrderRow(name, count, address, phone) {
+        let tempHtml = `<tr>\
+                                <td>${name}</td>
+                                <td>${count}</td>
+                                <td>${address}</td>
+                                <td>${phone}</td>
+                              </tr>`;
+
+        $('#orders-box').append(tempHtml);
+    }
+
+    function showExchange() {
+        $.ajax({
+            type: "GET",
+            url: "https://api.manana.kr/exchange/rate.json",
+            data: {},
+            success: function (response) {
+                for (let i = 0; i < response.length; i++) {
+                    if (response[i]['name'] == 'USDKRW=X') {
+                        $('#exchange').text(response[i]['rate']);
+                        return;
+                    }
+                }
+
+            }
+        })
+    }
+
+    function isCellPhone(p) {
+        let regExp = /^(01[016789]{1}|02|0[3-9]{1}[0-9]{1})[-][0-9]{3,4}[-][0-9]{4}$/;
+        return regExp.test(p);
+    }
+</script>
+<style type="text/css">
+    * {
+        font-family: "Yeon Sung", cursive;
+    }
+
+    .img {
+        background-image: url("https://kr.hypebeast.com/files/2020/04/apple-iphone-12-design-refresh-ipad-pro.jpg");
+        background-size: cover;
+        background-position: center;
+        width: 500px;
+        height: 300px;
+    }
+
+    .wrap {
+        width: 500px;
+        margin: auto;
+    }
+
+    h1, h5 {
+        display: inline;
+    }
+
+    .order {
+        text-align: center;
+    }
+
+    .exchange-info {
+        color: blue;
+    }
+</style>
+<body>
+<div class="wrap">
+    <div class="img"></div>
+    <div class="info">
+        <h1>사과 패드 Pro 팝니다</h1>
+        <h5>가격: 1,000,000 원 / 개</h5>
+        <p>최신형 사과 패드 Pro (4세대)</p>
+        <div class="exchange-info">달러-원 환율: <span id="exchange"></span></div>
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">주문자 이름</span>
+            </div>
+            <input type="text" class="form-control" id="order-name">
+        </div>
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <label class="input-group-text" for="order-count">수량</label>
+            </div>
+            <select class="custom-select" id="order-count">
+                <option selected value=""> -- 수량을 선택하세요 --</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+            </select>
+        </div>
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">주소</span>
+            </div>
+            <input type="text" class="form-control" id="order-address">
+        </div>
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">전화번호</span>
+            </div>
+            <input type="text" class="form-control" id="order-phone">
+        </div>
+        <div class="order">
+            <button onclick="order()" type="button" class="btn btn-primary">주문하기</button>
+        </div>
+    </div>
+    <div class="orders">
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">이름</th>
+                <th scope="col">수량</th>
+                <th scope="col">주소</th>
+                <th scope="col">전화번호</th>
+            </tr>
+            </thead>
+            <tbody id="orders-box">
+            <tr>
+                <td>박르탄</td>
+                <td>3</td>
+                <td>스파르타국 코딩시 프론트구</td>
+                <td>010-1234-5678</td>
+            </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
